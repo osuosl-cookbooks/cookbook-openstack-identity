@@ -1,5 +1,12 @@
 # encoding: UTF-8
 if defined?(ChefSpec)
+  def restart_openstack_identity_service(resource_name)
+    ChefSpec::Matchers::ResourceMatcher.new(
+      :openstack_identity_service,
+      :restart,
+      resource_name)
+  end
+
   def create_service_openstack_identity_register(resource_name)
     ChefSpec::Matchers::ResourceMatcher.new(
       :openstack_identity_register,

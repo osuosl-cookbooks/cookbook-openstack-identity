@@ -479,25 +479,22 @@ describe 'openstack-identity::server-apache' do
       end
 
       describe 'restart apache and sleep' do
-        let(:restart) { chef_run.execute('Keystone apache restart') }
-        let(:sleep) { chef_run.execute('Keystone: sleep') }
-
-        it 'has restart resource' do
-          expect(chef_run).to run_execute(restart.name).with(
-            command: 'uname'
-          )
+        let(:restart) do
+          chef_run.find_resource(:openstack_identity_service, 'restart identity service')
         end
 
-        it 'has sleep resource' do
-          expect(sleep.command).to eq('sleep 10')
+        it 'does not restart by default' do
+          expect(chef_run).not_to restart_openstack_identity_service('restart identity service')
         end
 
-        it 'has notified apache to restart' do
-          expect(restart).to notify('service[apache2]').to(:restart).immediately
-        end
+        %w(main admin).each do |svc|
+          it "restarts immediately if the keystone #{svc} config changes" do
+            expect(restart).to subscribe_to("template[#{node['apache']['dir']}/sites-available/keystone-#{svc}.conf]").on(:restart).immediately
+          end
 
-        it 'has notified sleep to run' do
-          expect(restart).to notify("execute[#{sleep.name}]").to(:run).immediately
+          it "restarts immediately if the keystone #{svc} config is enabled" do
+            expect(restart).to subscribe_to("execute[a2ensite keystone-#{svc}.conf]").on(:restart).immediately
+          end
         end
       end
     end
